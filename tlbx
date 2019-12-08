@@ -1,0 +1,151 @@
+#!/bin/sh
+
+set -eu
+
+prg=${0##*/}
+user=$(id -run)
+
+usage() {
+	echo "usage:
+	$prg create [-i IMGNAME] [-c CONTAINERNAME]
+	$prg enter [PODMAN_EXEC_OPTS...] CONTAINERNAME CMD [ARGS...]
+	$prg list
+	$prg destroy [-f] CONTAINERNAME [CONTAINERNAME...]"
+	exit 1
+}
+
+assertcontainer() (
+	set +e
+	[ -e /run/.containerenv ]
+	if [ $? -eq "${2:?}" ]; then
+		case $2 in
+			0) echo "warning: $prg $1 should not be run in a container." ;;
+			*) echo "warning: $prg $1 should be run in a container." ;;
+		esac >&2
+	fi
+)
+
+case ${1:-} in
+	create)
+		assertcontainer "$1" 0; shift
+
+		img=docker.io/library/alpine:latest name=
+
+		while getopts :i:c: opt; do
+			case $opt in
+				i) img="$OPTARG" ;;
+				c) name="$OPTARG" ;;
+				*) echo "$prg: unknown option -$OPTARG" >&2; usage ;;
+			esac
+		done
+		shift $((OPTIND - 1))
+		[ $# -le 0 ] || usage
+
+		if [ -z "${name:-}" ]; then
+			name="${img##*/}"
+			name="${name%%:*}-$prg"
+		fi
+
+		fullprg="$(readlink -f "$0")"
+		uid=$(id -ru)
+
+		# shellcheck disable=SC2046
+		podman create \
+			--dns none \
+			--hostname "$prg" \
+			--ipc host \
+			--name "$name" \
+			--network host \
+			--no-hosts \
+			--pid host \
+			--privileged \
+			--security-opt label=disable \
+			--ulimit host \
+			--userns=keep-id \
+			--user root:root \
+			--volume "$fullprg:/usr/local/sbin/$prg":ro \
+			--volume "/run/user/$uid:/run/user/$uid" \
+			--volume "$HOME:/home/$user":rslave \
+			--volume /run/dbus/system_bus_socket:/run/dbus/system_bus_socket \
+			--volume /etc:/run/host/etc \
+			--volume /run:/run/host/run:rslave \
+			--volume /tmp:/run/host/tmp:rslave \
+			--volume /var:/run/host/var:rslave \
+			--volume /dev:/dev:rslave \
+			--volume /mnt:/mnt:rslave \
+			--volume /media:/media:rslave \
+			$([ -d /run/media ] && echo "--volume /run/media:/run/media:rslave") \
+			"$img" "$fullprg" init "$uid" "$user" "$name" >/dev/null
+
+		echo "Created container '$name' from image $img"
+
+		if podman start "$name" >/dev/null; then
+			echo "Enter with: $prg enter [PODMAN_EXEC_OPTS...] $name CMD [ARGS...]"
+			echo "(Podman exec options -i -t are required for an interactive shell.)"
+			exit 0
+		else
+			echo "Container failed to start. You might want to podman rm $name."
+			exit 2
+		fi
+		;;
+
+	init)
+		# This is run from the container and should be executed with podman start.
+		assertcontainer "$1" 1; shift
+
+		uid="${1:?}" user="${2:?}" name="${3:?}"
+
+		cat | while read -r src dst opt; do
+			if [ -d "$src" ]; then
+				mkdir -p "$dst"
+			else
+				! [ -f "$src" ] && continue
+			fi
+
+			mount --bind -v -o "$opt" "$src" "$dst"
+		done <<- @
+		/usr/share/empty /sys/fs/selinux rw
+		/run/host/run/libvirt /run/libvirt rw
+		/run/host/var/lib/flatpak /var/lib/flatpak ro
+		@
+
+		ln -sfv /run/host/etc/hosts /etc/hosts
+		ln -sfv /run/host/etc/resolv.conf /etc/resolv.conf
+
+		getent passwd "$user" 2>/dev/null ||
+			adduser -D -H -h "/home/$user" -u "$uid" "$user"
+
+		passwd -d root
+
+		[ -d "${XDG_RUNTIME_DIR:-}" ] || XDG_RUNTIME_DIR=/run/user/"$uid"
+		mkdir -p "$XDG_RUNTIME_DIR/$prg"
+
+		pipe="$XDG_RUNTIME_DIR/$prg/initialized-$$"
+		mkfifo -m 400 "$pipe"
+
+		# block forever
+		exec cat "$pipe"
+		;;
+
+	enter)
+		assertcontainer "$1" 0; shift
+
+		# shellcheck disable=SC2046
+		exec podman exec $(env | sed -r '
+			/^(HOST|HOSTNAME|HOME|PATH|SHELL|USER|_)=/ d
+			s/=.*//; s/^/-e /
+		') -u "$user" -w "$PWD" "$@"
+		;;
+
+	'')
+		echo "$prg: subcommand expected" >&2
+		usage
+		;;
+
+	*)
+		echo "$prg: unknown subcommand $1" >&2
+		usage
+		;;
+esac
+
+# vim: set ft=sh tw=78 ai noet ts=2 sw=2:
