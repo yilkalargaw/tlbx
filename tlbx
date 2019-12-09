@@ -4,6 +4,7 @@ set -eu
 
 prg=${0##*/}
 user=$(id -run)
+label="com.gitlab.uppercat.tlbx=true"
 
 usage() {
 	echo "usage:
@@ -51,6 +52,7 @@ case ${1:-} in
 
 		# shellcheck disable=SC2046
 		podman create \
+			--label "$label" \
 			--dns none \
 			--hostname "$prg" \
 			--ipc host \
@@ -135,6 +137,15 @@ case ${1:-} in
 			/^(HOST|HOSTNAME|HOME|PATH|SHELL|USER|_)=/ d
 			s/=.*//; s/^/-e /
 		') -u "$user" -w "$PWD" "$@"
+		;;
+
+	list)
+		assertcontainer "$1" 0; shift
+
+		[ $# -le 0 ] || echo "warning: $prg list does not take arguments." >&2
+
+		exec podman ps -af label="$label" \
+			--format "{{.ID}}  {{.Names}}  {{.Created}}  {{.Image}}  {{.Status}}"
 		;;
 
 	'')
