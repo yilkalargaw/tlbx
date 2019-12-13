@@ -95,15 +95,8 @@ case ${1:-} in
 			"$img" "$fullprg" init "$uid" "$user" "$name" >/dev/null
 
 		echo "Created container '$name' from image $img"
+		echo "Enter with: $prg enter [PODMAN_EXEC_OPTS...] $name CMD [ARGS...]"
 
-		if podman "$ll" start "$name" >/dev/null; then
-			echo "Enter with: $prg enter [PODMAN_EXEC_OPTS...] $name CMD [ARGS...]"
-			echo "(Podman exec options -i -t are required for an interactive shell.)"
-			exit 0
-		else
-			echo "Container failed to start. You might want to podman rm $name."
-			exit 2
-		fi
 		;;
 
 	init)
@@ -145,6 +138,35 @@ case ${1:-} in
 
 	enter)
 		assertcontainer "$1" 0; shift
+
+		name=
+		for arg; do
+			case $arg in
+				-*) ;;
+				*) name="$arg"; break ;;
+			esac
+		done
+		if [ -z "${name:-}" ]; then
+			echo "Container name required." >&2
+			exit 1
+		fi
+
+		read -r id status <<- @
+		$(podman "$ll" inspect -f label="$label" \
+				--format "{{.Id}}  {{.State.Status}}" "$name")
+		@
+
+		( # Ensure crun state is clean so that the container can be restarted.
+		crundir="${XDG_RUNTIME_DIR:-/run/user/$uid}/crun/$id"
+		if [ "$status" = exited ] && [ -d "$crundir" ]; then
+			rm -rf "$crundir"
+		fi
+		)
+
+		case $status in
+			running) ;;
+			*) podman "$ll" start "$name" >/dev/null ;;
+		esac
 
 		# shellcheck disable=SC2046
 		exec podman "$ll" exec $(env | sed -r '
