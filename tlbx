@@ -5,13 +5,17 @@ set -eu
 prg=${0##*/}
 user=$(id -run)
 label="com.gitlab.uppercat.tlbx=true"
+ll="--log-level=error"
 
 usage() {
 	echo "usage:
 	$prg create [-i IMGNAME] [-c CONTAINERNAME]
 	$prg enter [PODMAN_EXEC_OPTS...] CONTAINERNAME CMD [ARGS...]
 	$prg list
-	$prg destroy [-f] CONTAINERNAME [CONTAINERNAME...]"
+	$prg destroy [-f] CONTAINERNAME [CONTAINERNAME...]
+
+global options:
+	$prg [-l debug|info|warn|error|fatal|panic] (default: error)"
 	exit 1
 }
 
@@ -25,6 +29,17 @@ assertcontainer() (
 		esac >&2
 	fi
 )
+
+while getopts :l: opt; do
+	case $opt in
+		l) case $OPTARG in
+			debug|info|warn|error|fatal|panic) ll="--log-level=$OPTARG" ;;
+			*) echo "$prg: unknown loglevel '$OPTARG'" >&2; usage ;;
+		esac ;;
+		*) echo "$prg: unknown option -$OPTARG" >&2; usage ;;
+	esac
+done
+shift $((OPTIND - 1)); unset OPTIND
 
 case ${1:-} in
 	create)
@@ -51,7 +66,7 @@ case ${1:-} in
 		uid=$(id -ru)
 
 		# shellcheck disable=SC2046
-		podman create \
+		podman "$ll" create \
 			--label "$label" \
 			--dns none \
 			--hostname "$prg" \
@@ -81,7 +96,7 @@ case ${1:-} in
 
 		echo "Created container '$name' from image $img"
 
-		if podman start "$name" >/dev/null; then
+		if podman "$ll" start "$name" >/dev/null; then
 			echo "Enter with: $prg enter [PODMAN_EXEC_OPTS...] $name CMD [ARGS...]"
 			echo "(Podman exec options -i -t are required for an interactive shell.)"
 			exit 0
@@ -132,7 +147,7 @@ case ${1:-} in
 		assertcontainer "$1" 0; shift
 
 		# shellcheck disable=SC2046
-		exec podman exec $(env | sed -r '
+		exec podman "$ll" exec $(env | sed -r '
 			/^(HOST|HOSTNAME|HOME|PATH|SHELL|USER|_)=/ d
 			s/=.*//; s/^/-e /
 		') -u "$user" -w "$PWD" "$@"
@@ -143,7 +158,7 @@ case ${1:-} in
 
 		[ $# -le 0 ] || echo "warning: $prg list does not take arguments." >&2
 
-		exec podman ps -af label="$label" \
+		exec podman "$ll" ps -af label="$label" \
 			--format "{{.ID}}  {{.Names}}  {{.Created}}  {{.Image}}  {{.Status}}"
 		;;
 
@@ -162,20 +177,20 @@ case ${1:-} in
 		[ $# -gt 0 ] || usage
 
 		for name do
-			case $(podman ps -a -f label="$label" -f name="^$name$" \
+			case $(podman "$ll" ps -a -f label="$label" -f name="^$name$" \
 				--format "{{.State}}") in
 				running)
 					if [ -z "$force" ]; then
 						echo "Container '$name' is running. Pass -f to force." >&2
 					else
-						podman stop "$name" >/dev/null && podman rm "$name"
+						podman "$ll" stop "$name" >/dev/null && podman rm "$ll" "$name"
 					fi
 					;;
 				'')
 					echo "No $prg container by name '$name' is known." >&2
 					;;
 				*)
-					podman rm "$name"
+					podman rm "$ll" "$name"
 					;;
 			esac
 		done
