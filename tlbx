@@ -122,8 +122,13 @@ case ${1:-} in
 		ln -sfv /run/host/etc/hosts /etc/hosts
 		ln -sfv /run/host/etc/resolv.conf /etc/resolv.conf
 
-		getent passwd "$user" 2>/dev/null ||
-			adduser -D -H -h "/home/$user" -u "$uid" "$user"
+		getent passwd "$user" 2>/dev/null || {
+			if command -v useradd >/dev/null; then
+				useradd -M -d "/home/$user" -u "$uid" "$user"
+			else
+				adduser -D -H -h "/home/$user" -u "$uid" "$user"
+			fi
+		}
 
 		passwd -d root
 
