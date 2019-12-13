@@ -119,10 +119,9 @@ case ${1:-} in
 
 		passwd -d root
 
-		[ -d "${XDG_RUNTIME_DIR:-}" ] || XDG_RUNTIME_DIR=/run/user/"$uid"
-		mkdir -p "$XDG_RUNTIME_DIR/$prg"
-
-		pipe="$XDG_RUNTIME_DIR/$prg/initialized-$$"
+		# This is out of reach in root's home in the container.
+		mkdir -p ~/.cache
+		pipe=~/.cache/"$prg-initialized-$$"
 		mkfifo -m 400 "$pipe"
 
 		# block forever
