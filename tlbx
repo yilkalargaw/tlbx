@@ -5,6 +5,7 @@ set -eu
 prg=${0##*/}
 label="com.gitlab.uppercat.tlbx=true"
 ll="--log-level=error"
+img="docker.io/library/alpine:latest"
 
 usage() {
 	echo "usage:
@@ -37,8 +38,7 @@ case ${1:-} in
 	create)
 		shift
 
-		img=docker.io/library/alpine:latest name=
-
+		name=
 		while getopts :i:c: opt; do
 			case $opt in
 				i) img="$OPTARG" ;;
