@@ -148,7 +148,7 @@ INIT
 
 		read -r id status <<- @
 		$(podman "$ll" inspect -f label="$label" \
-				--format "{{.Id}}  {{.State.Status}}" "$name")
+				--format "{{.Id}}	{{.State.Status}}" "$name")
 		@
 
 		( # Ensure crun state is clean so that the container can be restarted.
@@ -176,7 +176,7 @@ INIT
 		[ $# -le 0 ] || echo "warning: $prg list does not take arguments." >&2
 
 		exec podman "$ll" ps -af label="$label" \
-			--format "{{.ID}}  {{.Names}}  {{.Created}}  {{.Image}}  {{.Status}}"
+			--format "{{.ID}}	{{.Names}}	{{.Created}}	{{.Image}}	{{.Status}}"
 		;;
 
 	destroy)
