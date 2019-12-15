@@ -65,7 +65,48 @@ case ${1:-} in
 			name="${name%%:*}-$prg"
 		fi
 
-		fullprg="$(readlink -f "$0")"
+		mkdir -p "$XDG_RUNTIME_DIR/$prg"
+		cat > "$XDG_RUNTIME_DIR/$prg/$name-init" << 'INIT'
+#!/bin/sh
+# This is run from the container and should be executed with podman start.
+
+uid="${1:?}" user="${2:?}" name="${3:?}"
+
+cat | while read -r src dst opt; do
+	if [ -d "$src" ]; then
+		mkdir -p "$dst"
+	else
+		! [ -f "$src" ] && continue
+	fi
+
+	mount --bind -v -o "$opt" "$src" "$dst"
+done <<- @
+/usr/share/empty /sys/fs/selinux rw
+/run/host/run/libvirt /run/libvirt rw
+/run/host/var/lib/flatpak /var/lib/flatpak ro
+@
+
+ln -sfv /run/host/etc/hosts /etc/hosts
+ln -sfv /run/host/etc/resolv.conf /etc/resolv.conf
+
+getent passwd "$user" 2>/dev/null || {
+	if command -v useradd >/dev/null; then
+		useradd -M -d "/home/$user" -u "$uid" "$user"
+	else
+		adduser -D -H -h "/home/$user" -u "$uid" "$user"
+	fi
+}
+
+passwd -d root
+
+# This is out of reach in root's home in the container.
+mkdir -p ~/.cache
+pipe=~/.cache/"$prg-initialized-$$"
+mkfifo -m 400 "$pipe"
+
+# block forever
+exec cat "$pipe"
+INIT
 
 		# shellcheck disable=SC2046
 		podman "$ll" create \
@@ -82,7 +123,6 @@ case ${1:-} in
 			--ulimit host \
 			--userns=keep-id \
 			--user root:root \
-			--volume "$fullprg:/usr/local/sbin/$prg":ro \
 			--volume "$XDG_RUNTIME_DIR:$XDG_RUNTIME_DIR" \
 			--volume "$HOME:/home/$user":rslave \
 			--volume /run/dbus/system_bus_socket:/run/dbus/system_bus_socket \
@@ -94,53 +134,12 @@ case ${1:-} in
 			--volume /mnt:/mnt:rslave \
 			--volume /media:/media:rslave \
 			$([ -d /run/media ] && echo "--volume /run/media:/run/media:rslave") \
-			"$img" "$fullprg" init "$uid" "$user" "$name" >/dev/null
+			"$img" /bin/sh "$XDG_RUNTIME_DIR/$prg/$name-init" \
+				"$uid" "$user" "$name" >/dev/null
 
 		echo "Created container '$name' from image $img"
 		echo "Enter with: $prg enter [PODMAN_EXEC_OPTS...] $name CMD [ARGS...]"
 
-		;;
-
-	init)
-		# This is run from the container and should be executed with podman start.
-		assertcontainer "$1" 1; shift
-
-		uid="${1:?}" user="${2:?}" name="${3:?}"
-
-		cat | while read -r src dst opt; do
-			if [ -d "$src" ]; then
-				mkdir -p "$dst"
-			else
-				! [ -f "$src" ] && continue
-			fi
-
-			mount --bind -v -o "$opt" "$src" "$dst"
-		done <<- @
-		/usr/share/empty /sys/fs/selinux rw
-		/run/host/run/libvirt /run/libvirt rw
-		/run/host/var/lib/flatpak /var/lib/flatpak ro
-		@
-
-		ln -sfv /run/host/etc/hosts /etc/hosts
-		ln -sfv /run/host/etc/resolv.conf /etc/resolv.conf
-
-		getent passwd "$user" 2>/dev/null || {
-			if command -v useradd >/dev/null; then
-				useradd -M -d "/home/$user" -u "$uid" "$user"
-			else
-				adduser -D -H -h "/home/$user" -u "$uid" "$user"
-			fi
-		}
-
-		passwd -d root
-
-		# This is out of reach in root's home in the container.
-		mkdir -p ~/.cache
-		pipe=~/.cache/"$prg-initialized-$$"
-		mkfifo -m 400 "$pipe"
-
-		# block forever
-		exec cat "$pipe"
 		;;
 
 	enter)
