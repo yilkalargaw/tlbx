@@ -18,17 +18,6 @@ global options:
 	exit 1
 }
 
-assertcontainer() (
-	set +e
-	[ -e /run/.containerenv ]
-	if [ $? -eq "${2:?}" ]; then
-		case $2 in
-			0) echo "warning: $prg $1 should not be run in a container." ;;
-			*) echo "warning: $prg $1 should be run in a container." ;;
-		esac >&2
-	fi
-)
-
 while getopts :l: opt; do
 	case $opt in
 		l) case $OPTARG in
@@ -46,7 +35,7 @@ XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$uid}"
 
 case ${1:-} in
 	create)
-		assertcontainer "$1" 0; shift
+		shift
 
 		img=docker.io/library/alpine:latest name=
 
@@ -143,7 +132,7 @@ INIT
 		;;
 
 	enter)
-		assertcontainer "$1" 0; shift
+		shift
 
 		name=
 		for arg; do
@@ -182,7 +171,7 @@ INIT
 		;;
 
 	list)
-		assertcontainer "$1" 0; shift
+		shift
 
 		[ $# -le 0 ] || echo "warning: $prg list does not take arguments." >&2
 
@@ -191,7 +180,7 @@ INIT
 		;;
 
 	destroy)
-		assertcontainer "$1" 0; shift
+		shift
 
 		force=
 		while getopts :f opt; do
