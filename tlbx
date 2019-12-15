@@ -3,7 +3,6 @@
 set -eu
 
 prg=${0##*/}
-user=$(id -run)
 label="com.gitlab.uppercat.tlbx=true"
 ll="--log-level=error"
 
@@ -41,6 +40,10 @@ while getopts :l: opt; do
 done
 shift $((OPTIND - 1)); unset OPTIND
 
+user=$(id -run)
+uid=$(id -ru)
+XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$uid}"
+
 case ${1:-} in
 	create)
 		assertcontainer "$1" 0; shift
@@ -63,7 +66,6 @@ case ${1:-} in
 		fi
 
 		fullprg="$(readlink -f "$0")"
-		uid=$(id -ru)
 
 		# shellcheck disable=SC2046
 		podman "$ll" create \
@@ -81,7 +83,7 @@ case ${1:-} in
 			--userns=keep-id \
 			--user root:root \
 			--volume "$fullprg:/usr/local/sbin/$prg":ro \
-			--volume "/run/user/$uid:/run/user/$uid" \
+			--volume "$XDG_RUNTIME_DIR:$XDG_RUNTIME_DIR" \
 			--volume "$HOME:/home/$user":rslave \
 			--volume /run/dbus/system_bus_socket:/run/dbus/system_bus_socket \
 			--volume /etc:/run/host/etc \
@@ -162,7 +164,7 @@ case ${1:-} in
 		@
 
 		( # Ensure crun state is clean so that the container can be restarted.
-		crundir="${XDG_RUNTIME_DIR:-/run/user/$uid}/crun/$id"
+		crundir="$XDG_RUNTIME_DIR/crun/$id"
 		if [ "$status" = exited ] && [ -d "$crundir" ]; then
 			rm -rf "$crundir"
 		fi
