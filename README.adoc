@@ -12,13 +12,13 @@ Copy to a directory in `PATH`, such as `~/.local/bin`. Podman is the only
 requirement. Currently there are no distro packages available.
 
 = Usage
-* `tlbx create [-i IMGNAME] [-c CONTAINERNAME]`
+* `tlbx create [-i IMGNAME] [-c CONTAINERNAME] [-h HOSTNAME]`
 
 Example: `tlbx create -i centos:8 -c centosbox`
 
 The default image is https://hub.docker.com/_/alpine[Docker's official Alpine
-Linux] and the default container name is `-tlbx` appended to the image name,
-excluding the image tag.
+Linux]. The default container name is `-tlbx` appended to the image name,
+excluding the image tag. The default hostname is `tlbx`.
 
 * `tlbx enter [PODMAN_EXEC_OPTS...] CONTAINERNAME CMD [ARGS...]`
 
