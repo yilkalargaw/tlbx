@@ -7,9 +7,28 @@ differs in that tlbx does not require a specially prepared container image. It
 can work with any https://www.opencontainers.org/[OCI] image, including CentOS
 and Ubuntu.
 
+= Why
+
+tlbx is valuable for use cases such as:
+
+. Systems on which installing applications is difficult or discouraged, such
+as https://silverblue.fedoraproject.org/[Fedora Silverblue].
+. Systems on which you do not have the administrative ability to install
+applications.
+. Setting up a development environment which you intend to back up or deploy
+to other systems. If you don't know all the applications that will be required
+_a priori_, you can set up a tlbx as an ongoing work in progress. When it
+needs to move, `podman commit` the container and `skopeo copy` the resulting
+image.
+. Quickly accessing packages that aren't readily available from your distro's
+default repositories, but which are available from a fast-moving or less
+restrictive distro such as https://archlinux.org[Arch Linux].
+. Any situation in which you want to use a packaged application but don't want
+to run the package manager as root, such as trying out an unfamiliar app.
+
 = Installing
 Copy to a directory in `PATH`, such as `~/.local/bin`. Podman is the only
-requirement. Currently there are no distro packages available.
+requirement. Currently there are no distro packages available for tlbx itself.
 
 = Usage
 * `tlbx create [-i IMGNAME] [-c CONTAINERNAME] [-h HOSTNAME]`
