@@ -2,10 +2,11 @@
 Linux container environments. Because it is a wrapper for
 https://podman.io/[podman], using it does not require root privilege.
 
-tlbx is inspired by https://github.com/containers/toolbox[toolbox], but
-differs in that tlbx does not require a specially prepared container image. It
-can work with any https://www.opencontainers.org/[OCI] image, including CentOS
-and Ubuntu.
+tlbx is inspired by https://github.com/containers/toolbox[containers/toolbox],
+but differs in that tlbx does not require a specially prepared container
+image. (Similarites to https://github.com/coreos/toolbox[coreos/rhcos-toolbox]
+are also apparent.) tlbx can work with any
+https://www.opencontainers.org/[OCI] image, including CentOS and Ubuntu.
 
 = Why
 
