@@ -9,7 +9,7 @@ img="docker.io/library/alpine:latest"
 
 usage() {
 	echo "usage:
-	$prg create [-i IMGNAME] [-c CONTAINERNAME]
+	$prg create [-i IMGNAME] [-c CONTAINERNAME] [-h HOSTNAME]
 	$prg enter [PODMAN_EXEC_OPTS...] CONTAINERNAME CMD [ARGS...]
 	$prg list
 	$prg destroy [-f] CONTAINERNAME [CONTAINERNAME...]
@@ -38,11 +38,12 @@ case ${1:-} in
 	create)
 		shift
 
-		name=
-		while getopts :i:c: opt; do
+		name='' hostname=''
+		while getopts :i:c:h: opt; do
 			case $opt in
 				i) img="$OPTARG" ;;
 				c) name="$OPTARG" ;;
+				h) hostname="$OPTARG" ;;
 				*) echo "$prg: unknown option -$OPTARG" >&2; usage ;;
 			esac
 		done
@@ -101,7 +102,7 @@ INIT
 		podman "$ll" create \
 			--label "$label" \
 			--dns none \
-			--hostname "$prg" \
+			--hostname "${hostname:-$prg}" \
 			--ipc host \
 			--name "$name" \
 			--network host \
