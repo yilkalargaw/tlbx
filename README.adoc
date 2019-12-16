@@ -1,0 +1,45 @@
+*tlbx* is a tool that facilitates creating and using mutable, persistent
+Linux container environments. Because it is a wrapper for
+https://podman.io/[podman], using it does not require root privilege.
+
+tlbx is inspired by https://github.com/containers/toolbox[toolbox], but
+differs in that tlbx does not require a specially prepared container image. It
+can work with any https://www.opencontainers.org/[OCI] image, including CentOS
+and Ubuntu.
+
+= Installing
+Copy to a directory in `PATH`, such as `~/.local/bin`. Podman is the only
+requirement. Currently there are no distro packages available.
+
+= Usage
+* `tlbx create [-i IMGNAME] [-c CONTAINERNAME]`
+
+Example: `tlbx create -i centos:8 -c centosbox`
+
+The default image is https://hub.docker.com/_/alpine[Docker's official Alpine
+Linux] and the default container name is `-tlbx` appended to the image name,
+excluding the image tag.
+
+* `tlbx enter [PODMAN_EXEC_OPTS...] CONTAINERNAME CMD [ARGS...]`
+
+Example: `tlbx enter -it centos bash -l`
+
+The `-i` and `-t` podman options are required for an interactive shell session.
+A tlbx container can be entered concurrently from multiple ttys, and the entry
+command doesn't have to be a shell, or interactive.
+
+* `tlbx list`
+
+The list subcommand shows the subset of podman containers that are labeled with
+`com.gitlab.uppercat.tlbx`. This label is applied automatically by
+`tlbx create`.
+
+* `tlbx destroy [-f] CONTAINERNAME [CONTAINERNAME...]`
+
+Example: `tlbx destroy centosbox`
+
+If the container is running (because it has been entered), the `-f` switch is
+required. `tlbx destroy` can only affect containers created with `tlbx create`,
+because it filters for the `com.gitlab.uppercat.tlbx` label.
+
+// vim: set ft=asciidoc tw=78:
