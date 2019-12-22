@@ -7,6 +7,8 @@ label="com.gitlab.uppercat.tlbx=true"
 ll="--log-level=error"
 img="docker.io/library/alpine:latest"
 
+err()  { printf '%s: %s\n' "$prg" "$1" >&2; shift; "$@"; }
+
 usage() {
 	echo "usage:
 	$prg create [-i IMGNAME] [-c CONTAINERNAME] [-h HOSTNAME]
@@ -23,9 +25,9 @@ while getopts :l: opt; do
 	case $opt in
 		l) case $OPTARG in
 			debug|info|warn|error|fatal|panic) ll="--log-level=$OPTARG" ;;
-			*) echo "$prg: unknown loglevel '$OPTARG'" >&2; usage ;;
+			*) err "$prg: unknown loglevel '$OPTARG'" usage ;;
 		esac ;;
-		*) echo "$prg: unknown option -$OPTARG" >&2; usage ;;
+		*) err "$prg: unknown option -$OPTARG" usage ;;
 	esac
 done
 shift $((OPTIND - 1)); unset OPTIND
@@ -44,7 +46,7 @@ case ${1:-} in
 				i) img="$OPTARG" ;;
 				c) name="$OPTARG" ;;
 				h) hostname="$OPTARG" ;;
-				*) echo "$prg: unknown option -$OPTARG" >&2; usage ;;
+				*) err "unknown create option -$OPTARG" usage ;;
 			esac
 		done
 		shift $((OPTIND - 1))
@@ -143,8 +145,7 @@ INIT
 			esac
 		done
 		if [ -z "${name:-}" ]; then
-			echo "Container name required." >&2
-			exit 1
+			err "container name required." exit 1
 		fi
 
 		read -r id status <<- @
@@ -174,7 +175,7 @@ INIT
 	list)
 		shift
 
-		[ $# -le 0 ] || echo "warning: $prg list does not take arguments." >&2
+		[ $# -le 0 ] || err "warning: list does not take arguments."
 
 		exec podman "$ll" ps -af label="$label" \
 			--format "{{.ID}}	{{.Names}}	{{.Created}}	{{.Image}}	{{.Status}}"
@@ -187,7 +188,7 @@ INIT
 		while getopts :f opt; do
 			case $opt in
 				f) force=1 ;;
-				*) echo "$prg: unknown option -$OPTARG" >&2; usage ;;
+				*) err "unknown destroy option -$OPTARG" usage ;;
 			esac
 		done
 		shift $((OPTIND - 1))
@@ -199,13 +200,13 @@ INIT
 				--format "{{.State}}") in
 				running)
 					if [ -z "$force" ]; then
-						echo "Container '$name' is running. Pass -f to force." >&2
+						err "container '$name' is running. Pass -f to force."
 					else
 						podman "$ll" stop "$name" >/dev/null && podman rm "$ll" "$name"
 					fi
 					;;
 				'')
-					echo "No $prg container by name '$name' is known." >&2
+					err "no container by name '$name' is known."
 					;;
 				*)
 					podman rm "$ll" "$name"
@@ -216,13 +217,11 @@ INIT
 		;;
 
 	'')
-		echo "$prg: subcommand expected" >&2
-		usage
+		err "subcommand expected" usage
 		;;
 
 	*)
-		echo "$prg: unknown subcommand $1" >&2
-		usage
+		err "unknown subcommand '$1'" usage
 		;;
 esac
 
