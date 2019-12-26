@@ -57,8 +57,69 @@ case ${1:-} in
 			name="${name%%:*}-$prg"
 		fi
 
-		mkdir -p "$XDG_RUNTIME_DIR/$prg"
-		cat > "$XDG_RUNTIME_DIR/$prg/$name-init" << 'INIT'
+		# shellcheck disable=SC2046
+		podman "$ll" create \
+			--label "$label" \
+			--dns none \
+			--hostname "${hostname:-$prg}" \
+			--ipc host \
+			--name "$name" \
+			--network host \
+			--no-hosts \
+			--pid host \
+			--privileged \
+			--security-opt label=disable \
+			--ulimit host \
+			--userns=keep-id \
+			--user root:root \
+			--volume "$XDG_RUNTIME_DIR:$XDG_RUNTIME_DIR" \
+			--volume "$HOME:/home/$user":rslave \
+			--volume /run/dbus/system_bus_socket:/run/dbus/system_bus_socket \
+			--volume /etc:/run/host/etc \
+			--volume /run:/run/host/run:rslave \
+			--volume /tmp:/run/host/tmp:rslave \
+			--volume /var:/run/host/var:rslave \
+			--volume /dev:/dev:rslave \
+			--volume /mnt:/mnt:rslave \
+			--volume /media:/media:rslave \
+			$([ -d /run/media ] && echo "--volume /run/media:/run/media:rslave") \
+			"$img" /bin/sh "$XDG_RUNTIME_DIR/$prg-init" \
+				"$uid" "$user" "$name" >/dev/null
+
+		echo "Created container '$name' from image $img"
+		echo "Enter with: $prg enter [PODMAN_EXEC_OPTS...] $name CMD [ARGS...]"
+
+		;;
+
+	enter)
+		shift
+
+		name=
+		for arg; do
+			case $arg in
+				-*) ;;
+				*) name="$arg"; break ;;
+			esac
+		done
+		if [ -z "${name:-}" ]; then
+			err "container name required." exit 1
+		fi
+
+		read -r id status <<- @
+		$(podman "$ll" inspect -f label="$label" \
+				--format "{{.Id}}	{{.State.Status}}" "$name")
+		@
+
+		( # Ensure crun state is clean so that the container can be restarted.
+		crundir="$XDG_RUNTIME_DIR/crun/$id"
+		if [ "$status" = exited ] && [ -d "$crundir" ]; then
+			rm -rf "$crundir"
+		fi
+		)
+
+		case $status in
+			running) ;;
+			*) cat > "$XDG_RUNTIME_DIR/$prg-init" << 'INIT'
 #!/bin/sh
 # This is run from the container and should be executed with podman start.
 
@@ -99,70 +160,7 @@ mkfifo -m 400 "$pipe"
 # block forever
 exec cat "$pipe"
 INIT
-
-		# shellcheck disable=SC2046
-		podman "$ll" create \
-			--label "$label" \
-			--dns none \
-			--hostname "${hostname:-$prg}" \
-			--ipc host \
-			--name "$name" \
-			--network host \
-			--no-hosts \
-			--pid host \
-			--privileged \
-			--security-opt label=disable \
-			--ulimit host \
-			--userns=keep-id \
-			--user root:root \
-			--volume "$XDG_RUNTIME_DIR:$XDG_RUNTIME_DIR" \
-			--volume "$HOME:/home/$user":rslave \
-			--volume /run/dbus/system_bus_socket:/run/dbus/system_bus_socket \
-			--volume /etc:/run/host/etc \
-			--volume /run:/run/host/run:rslave \
-			--volume /tmp:/run/host/tmp:rslave \
-			--volume /var:/run/host/var:rslave \
-			--volume /dev:/dev:rslave \
-			--volume /mnt:/mnt:rslave \
-			--volume /media:/media:rslave \
-			$([ -d /run/media ] && echo "--volume /run/media:/run/media:rslave") \
-			"$img" /bin/sh "$XDG_RUNTIME_DIR/$prg/$name-init" \
-				"$uid" "$user" "$name" >/dev/null
-
-		echo "Created container '$name' from image $img"
-		echo "Enter with: $prg enter [PODMAN_EXEC_OPTS...] $name CMD [ARGS...]"
-
-		;;
-
-	enter)
-		shift
-
-		name=
-		for arg; do
-			case $arg in
-				-*) ;;
-				*) name="$arg"; break ;;
-			esac
-		done
-		if [ -z "${name:-}" ]; then
-			err "container name required." exit 1
-		fi
-
-		read -r id status <<- @
-		$(podman "$ll" inspect -f label="$label" \
-				--format "{{.Id}}	{{.State.Status}}" "$name")
-		@
-
-		( # Ensure crun state is clean so that the container can be restarted.
-		crundir="$XDG_RUNTIME_DIR/crun/$id"
-		if [ "$status" = exited ] && [ -d "$crundir" ]; then
-			rm -rf "$crundir"
-		fi
-		)
-
-		case $status in
-			running) ;;
-			*) podman "$ll" start "$name" >/dev/null ;;
+			podman "$ll" start "$name" >/dev/null ;;
 		esac
 
 		# shellcheck disable=SC2046
