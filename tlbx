@@ -11,7 +11,7 @@ err()  { printf '%s: %s\n' "$prg" "$1" >&2; shift; "$@"; }
 
 usage() {
 	echo "usage:
-	$prg create [-i IMGNAME] [-c CONTAINERNAME] [-h HOSTNAME]
+	$prg create [-i IMGNAME] [-c CONTAINERNAME] [-h HOSTNAME] [-n]
 	$prg enter [PODMAN_EXEC_OPTS...] CONTAINERNAME CMD [ARGS...]
 	$prg list
 	$prg destroy [-f] CONTAINERNAME [CONTAINERNAME...]
@@ -40,12 +40,13 @@ case ${1:-} in
 	create)
 		shift
 
-		name='' hostname=''
-		while getopts :i:c:h: opt; do
+		name='' hostname='' bindhome=1
+		while getopts :i:c:h:n opt; do
 			case $opt in
 				i) img="$OPTARG" ;;
 				c) name="$OPTARG" ;;
 				h) hostname="$OPTARG" ;;
+				n) bindhome= ;;
 				*) err "unknown create option -$OPTARG" usage ;;
 			esac
 		done
@@ -73,7 +74,7 @@ case ${1:-} in
 			--userns=keep-id \
 			--user root:root \
 			--volume "$XDG_RUNTIME_DIR:$XDG_RUNTIME_DIR" \
-			--volume "$HOME:/home/$user":rslave \
+			$([ -n "$bindhome" ] && echo "--volume $HOME:/home/$user:rslave") \
 			--volume /run/dbus/system_bus_socket:/run/dbus/system_bus_socket \
 			--volume /etc:/run/host/etc \
 			--volume /run:/run/host/run:rslave \
@@ -84,7 +85,7 @@ case ${1:-} in
 			--volume /media:/media:rslave \
 			$([ -d /run/media ] && echo "--volume /run/media:/run/media:rslave") \
 			"$img" /bin/sh "$XDG_RUNTIME_DIR/$prg-init" \
-				"$uid" "$user" "$name" >/dev/null
+				"$uid" "$user" "$bindhome" >/dev/null
 
 		echo "Created container '$name' from image $img"
 		echo "Enter with: $prg enter [PODMAN_EXEC_OPTS...] $name CMD [ARGS...]"
@@ -123,7 +124,7 @@ case ${1:-} in
 #!/bin/sh
 # This is run from the container and should be executed with podman start.
 
-uid="${1:?}" user="${2:?}" name="${3:?}"
+uid="${1:?}" user="${2:?}" bindhome="${3:-}"
 
 cat | while read -r src dst opt; do
 	if [ -d "$src" ]; then
@@ -144,9 +145,11 @@ ln -sfv /run/host/etc/resolv.conf /etc/resolv.conf
 
 getent passwd "$user" 2>/dev/null || {
 	if command -v useradd >/dev/null; then
-		useradd -M -d "/home/$user" -u "$uid" "$user"
+		useradd $([ -n "$bindhome" ] && echo "-M -d /home/$user") \
+			-u "$uid" "$user"
 	else
-		adduser -D -H -h "/home/$user" -u "$uid" "$user"
+		adduser -D $([ -n "$bindhome" ] && echo "-H -h /home/$user") \
+			-u "$uid" "$user"
 	fi
 }
 
