@@ -8,7 +8,7 @@ image. (Similarites to https://github.com/coreos/toolbox[coreos/rhcos-toolbox]
 are also apparent.) tlbx can work with any
 https://www.opencontainers.org/[OCI] image, including CentOS and Ubuntu.
 
-= Why
+== Why
 
 tlbx is valuable for use cases such as:
 
@@ -28,11 +28,11 @@ restrictive distro such as https://archlinux.org[Arch Linux].
 such as using an app you might not trust. In such a case you may also consider
 the `-n` option to `tlbx create`.
 
-= Installing
+== Installing
 Copy to a directory in `PATH`, such as `~/.local/bin`. Podman is the only
 requirement. Currently there are no distro packages available for tlbx itself.
 
-= Usage
+== Usage
 * `tlbx create [-i IMGNAME] [-c CONTAINERNAME] [-h HOSTNAME] [-n]`
 
 Example: `tlbx create -i centos:8 -c centosbox`
