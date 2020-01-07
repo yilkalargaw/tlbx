@@ -40,4 +40,8 @@ Example: `tlbx destroy centosbox`
 
 If the container is running (because it has been entered), the `-f` switch is required. `tlbx destroy` can only affect containers created with `tlbx create`, because it filters for the `com.gitlab.uppercat.tlbx` label.
 
+== Troubleshooting
+
+See https://gitlab.com/uppercat/tlbx/-/wikis/troubleshooting[the wiki].
+
 // vim: set ft=asciidoc tw=0 wrap lbr:
