@@ -83,6 +83,7 @@ case ${1:-} in
 			--volume /dev:/dev:rslave \
 			--volume /mnt:/mnt:rslave \
 			--volume /media:/media:rslave \
+			--volume /srv:/srv:rslave \
 			$([ -d /run/media ] && echo "--volume /run/media:/run/media:rslave") \
 			"$img" /bin/sh "$XDG_RUNTIME_DIR/$prg-init" \
 				"$uid" "$user" "$bindhome" >/dev/null
