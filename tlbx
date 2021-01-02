@@ -144,14 +144,14 @@ done <<- @
 ln -sfv /run/host/etc/hosts /etc/hosts
 ln -sfv /run/host/etc/resolv.conf /etc/resolv.conf
 
-getent passwd "$user" 2>/dev/null || {
-	if command -v useradd >/dev/null; then
-		useradd $([ -n "$bindhome" ] && echo "-M -d /home/$user") \
-			-u "$uid" "$user"
-	else
-		adduser -D $([ -n "$bindhome" ] && echo "-H -h /home/$user") \
-			-u "$uid" "$user"
-	fi
+if command -v useradd >/dev/null; then
+	useradd -d /home/$user -u "$uid" "$user"
+else
+	adduser -D -h /home/$user -u "$uid" "$user"
+fi || {
+	install -d -o "$user" -g "$user" -m 700 "/home/$user"
+	su "$user" sh -c "cp -p /etc/skel/.* /home/$user"
+	sed -i "/^$user:/ s,:[^:]*:\([^:]*\)$,:/home/$user:\1," /etc/passwd
 }
 
 passwd -d root
