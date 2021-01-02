@@ -16,7 +16,10 @@ tlbx is valuable for use cases such as:
 Copy to a directory in `PATH`, such as `~/.local/bin`. Podman is the only requirement. Currently there are no distro packages available for tlbx itself.
 
 == Usage
-* `tlbx create [-i IMGNAME] [-c CONTAINERNAME] [-h HOSTNAME] [-n]`
+
+=== create
+
+`tlbx create [-i IMGNAME] [-c CONTAINERNAME] [-h HOSTNAME] [-n]`
 
 Example: `tlbx create -i centos:8 -c centosbox`
 
@@ -24,7 +27,9 @@ The default image is https://hub.docker.com/_/alpine[Docker's official Alpine Li
 
 Your home directory is bind-mounted to the container unless the `-n` switch is passed.
 
-* `tlbx enter [PODMAN_EXEC_OPTS...] CONTAINERNAME [CMD [ARGS...]]`
+=== enter
+
+`tlbx enter [PODMAN_EXEC_OPTS...] CONTAINERNAME [CMD [ARGS...]]`
 
 If zero arguments are given after the container name, then the `-i` and `-t` podman options are implied, and the user's shell as specified in the container's `/etc/passwd` is run as a login shell.
 
@@ -38,11 +43,15 @@ Example: `tlbx enter --user=root -it centosbox dnf install ruby` runs a single i
 
 A tlbx container can be entered concurrently from multiple ttys, and the entry command doesn't have to be a shell, or interactive.
 
-* `tlbx list`
+=== list
+
+`tlbx list`
 
 The list subcommand shows the subset of podman containers that are labeled with `com.gitlab.uppercat.tlbx`. This label is applied automatically by `tlbx create`.
 
-* `tlbx destroy [-f] CONTAINERNAME [CONTAINERNAME...]`
+=== destroy
+
+`tlbx destroy [-f] CONTAINERNAME [CONTAINERNAME...]`
 
 Example: `tlbx destroy centosbox`
 
