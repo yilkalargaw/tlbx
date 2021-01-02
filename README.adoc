@@ -24,11 +24,19 @@ The default image is https://hub.docker.com/_/alpine[Docker's official Alpine Li
 
 Your home directory is bind-mounted to the container unless the `-n` switch is passed.
 
-* `tlbx enter [PODMAN_EXEC_OPTS...] CONTAINERNAME CMD [ARGS...]`
+* `tlbx enter [PODMAN_EXEC_OPTS...] CONTAINERNAME [CMD [ARGS...]]`
 
-Example: `tlbx enter -it centosbox bash -l`
+If zero arguments are given after the container name, then the `-i` and `-t` podman options are implied, and the user's shell as specified in the container's `/etc/passwd` is run as a login shell.
 
-The `-i` and `-t` podman options are required for an interactive shell session.  A tlbx container can be entered concurrently from multiple ttys, and the entry command doesn't have to be a shell, or interactive.
+Otherwise, any arguments passed after the container name will be the entry command; In that case, `-i` and/or `-t` must be passed before the container name if wanted.
+
+Example: `tlbx enter centosbox` results in an interactive `bash -l`
+
+Example: `tlbx enter centosbox bash` exits immediately due to no tty being requested for the shell
+
+Example: `tlbx enter --user=root -it centosbox dnf install ruby` runs a single interactive package installation
+
+A tlbx container can be entered concurrently from multiple ttys, and the entry command doesn't have to be a shell, or interactive.
 
 * `tlbx list`
 
