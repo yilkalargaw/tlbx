@@ -168,6 +168,29 @@ INIT
 			podman "$ll" start "$name" >/dev/null ;;
 		esac
 
+		for arg; do
+			case $arg in -*) ;;
+				*) name="$arg"; break ;;
+			esac
+		done
+		if [ -z "$name" ]; then
+			err "enter requires a tlbx name"
+		fi
+
+		if [ $# -le 1 ]; then
+			rootfs="$(podman inspect "$name" \
+				--format='{{.GraphDriver.Data.UpperDir}}')" ||
+				err "Could not inspect .GraphDriver.Data.UpperDir of tlbx $name."
+			if [ -d "$rootfs" ]; then
+				shell="$(awk -F : -v user="$user" \
+					'$1 == user {print $7}' "$rootfs/etc/passwd")" ||
+				err "Could not find $user in /etc/passwd of tlbx $name."
+			fi
+			fallback=/bin/sh
+			[ -n "${shell:-}" ] || err "Falling back to $fallback"
+			set -- -it "$name" "${shell:-$fallback}" -l
+		fi
+
 		# shellcheck disable=SC2046
 		exec podman "$ll" exec $(env | sed -r '
 			/^(HOST|HOSTNAME|HOME|PATH|SHELL|USER|_)=/ d
