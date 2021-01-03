@@ -3,7 +3,7 @@
 set -eu
 
 prg=${0##*/}
-label="com.gitlab.uppercat.tlbx=true"
+label="com.gitlab.uppercat.tlbx"
 ll="--log-level=error"
 img="docker.io/library/alpine:latest"
 
@@ -60,7 +60,7 @@ case ${1:-} in
 
 		# shellcheck disable=SC2046
 		podman "$ll" create \
-			--label "$label" \
+			--label "$label=true" \
 			--dns none \
 			--hostname "${hostname:-$prg}" \
 			--ipc host \
@@ -109,7 +109,7 @@ case ${1:-} in
 		fi
 
 		read -r id status <<- @
-		$(podman "$ll" inspect -f label="$label" \
+		$(podman "$ll" inspect -f label="$label=true" \
 				--format "{{.Id}}	{{.State.Status}}" "$name")
 		@
 
@@ -204,7 +204,7 @@ INIT
 
 		[ $# -le 0 ] || err "warning: list does not take arguments."
 
-		exec podman "$ll" ps -af label="$label" \
+		exec podman "$ll" ps -af label="$label=true" \
 			--format "{{.ID}}	{{.Names}}	{{.Created}}	{{.Image}}	{{.Status}}"
 		;;
 
@@ -229,9 +229,17 @@ INIT
 					continue ;;
 				*) ;;
 			esac
-			running="$(podman inspect --format='{{.State.Running}}' "$name")" || {
+			read -r running haslabel <<- @
+			$(podman inspect --format \
+			"{{.State.Running}} {{index .Config.Labels \"$label\"}}" "$name")
+			@
+			if [ -z "$running" ]; then
 				err "no container by name '$name' is known."; continue
-			}
+			fi
+			if ! [ "$haslabel" = true ]; then
+				err "'$name' exists but is not a tlbx container."
+				continue
+			fi
 			case $running in
 				true)
 					if [ -z "$force" ]; then
