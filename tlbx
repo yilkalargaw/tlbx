@@ -223,17 +223,23 @@ INIT
 		[ $# -gt 0 ] || usage
 
 		for name do
-			case $(podman "$ll" ps -a -f label="$label" -f name="^$name$" \
-				--format "{{.State}}") in
-				running)
+			case $name in
+				-*) err \
+					"container name cannot start with '-'; pass flags before subcommand"
+					continue ;;
+				*) ;;
+			esac
+			running="$(podman inspect --format='{{.State.Running}}' "$name")" || {
+				err "no container by name '$name' is known."; continue
+			}
+			case $running in
+				true)
 					if [ -z "$force" ]; then
 						err "container '$name' is running. Pass -f to force."
 					else
-						podman "$ll" stop "$name" >/dev/null && podman rm "$ll" "$name"
+						podman "$ll" stop "$name" >/dev/null
+						podman rm -f "$ll" "$name"
 					fi
-					;;
-				'')
-					err "no container by name '$name' is known."
 					;;
 				*)
 					podman rm "$ll" "$name"
