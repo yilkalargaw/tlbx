@@ -49,13 +49,13 @@ A tlbx container can be entered concurrently from multiple ttys, and the entry c
 
 The list subcommand shows the subset of podman containers that are labeled with `com.gitlab.uppercat.tlbx`. This label is applied automatically by `tlbx create`.
 
-=== destroy
+=== rm
 
-`tlbx destroy [-f] CONTAINERNAME [CONTAINERNAME...]`
+`tlbx rm [-f] CONTAINERNAME [CONTAINERNAME...]`
 
-Example: `tlbx destroy centosbox`
+Example: `tlbx rm centosbox`
 
-If the container is running (because it has been entered), the `-f` switch is required. `tlbx destroy` can only affect containers created with `tlbx create`, because it filters for the `com.gitlab.uppercat.tlbx` label.
+If the container is running (because it has been entered), the `-f` switch is required. `tlbx rm` can only affect containers created with `tlbx create`, because it filters for the `com.gitlab.uppercat.tlbx` label.
 
 == Troubleshooting
 

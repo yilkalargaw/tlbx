@@ -14,7 +14,7 @@ usage() {
 	$prg create [-i IMGNAME] [-c CONTAINERNAME] [-h HOSTNAME] [-n]
 	$prg enter [PODMAN_EXEC_OPTS...] CONTAINERNAME CMD [ARGS...]
 	$prg list
-	$prg destroy [-f] CONTAINERNAME [CONTAINERNAME...]
+	$prg rm [-f] CONTAINERNAME [CONTAINERNAME...]
 
 global options:
 	$prg [-l debug|info|warn|error|fatal|panic] (default: error)"
@@ -208,14 +208,14 @@ INIT
 			--format "{{.ID}}	{{.Names}}	{{.Created}}	{{.Image}}	{{.Status}}"
 		;;
 
-	destroy)
+	rm)
 		shift
 
 		force=
 		while getopts :f opt; do
 			case $opt in
 				f) force=1 ;;
-				*) err "unknown destroy option -$OPTARG" usage ;;
+				*) err "unknown rm option -$OPTARG" usage ;;
 			esac
 		done
 		shift $((OPTIND - 1))
