@@ -195,7 +195,9 @@ INIT
 		exec podman "$ll" exec $(env | sed -r '
 			/^(HOST|HOSTNAME|HOME|PATH|SHELL|USER|_)=/ d
 			/^[_A-Za-z][_A-Za-z0-9]*=/! d
-			s/=.*//; s/^/-e /
+			\|^[^=]+='"$HOME"'|! s/=.*//
+			\|^[^=]+='"$HOME"'| s|=/var|=|
+			s/^/-e /
 		') -u "$user" -w "/home/$user" "$@"
 		;;
 
