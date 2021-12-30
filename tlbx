@@ -129,13 +129,13 @@ case ${1:-} in
 uid="${1:?}" user="${2:?}" bindhome="${3:-}"
 
 cat | while read -r src dst opt; do
-	if [ -d "$src" ]; then
-		mkdir -p "$dst"
-	else
-		! [ -f "$src" ] && continue
-	fi
+    if [ -d "$src" ]; then
+        mkdir -p "$dst"
+    else
+        ! [ -f "$src" ] && continue
+    fi
 
-	mount --bind -v -o "$opt" "$src" "$dst"
+    mount --bind -v -o "$opt" "$src" "$dst"
 done <<- @
 /usr/share/empty /sys/fs/selinux rw
 /run/host/run/libvirt /run/libvirt rw
@@ -146,13 +146,19 @@ ln -sfv /run/host/etc/hosts /etc/hosts
 ln -sfv /run/host/etc/resolv.conf /etc/resolv.conf
 
 if command -v useradd >/dev/null; then
-	useradd -d /home/$user -u "$uid" "$user"
+    useradd -d /home/$user -u "$uid" "$user"
 else
-	adduser -D -h /home/$user -u "$uid" "$user"
+    adduser -D -h /home/$user -u "$uid" "$user"
 fi || {
-	install -d -o "$user" -g "$user" -m 700 "/home/$user"
-	su "$user" sh -c "cp -p /etc/skel/.* /home/$user"
-	sed -i "/^$user:/ s,:[^:]*:\([^:]*\)$,:/home/$user:\1," /etc/passwd
+    install -d -o "$user" -g "$user" -m 700 "/home/$user"
+    if [ -d /etc/skel ]; then
+	for skel_file in /etc/skel/.*; do
+            if [ ! -f /home/$user/$(basename $skel_file) ]; then
+		su "$user" sh -c "cp -p $skel_file /home/$user"
+            fi
+	done
+    fi
+    sed -i "/^$user:/ s,:[^:]*:\([^:]*\)$,:/home/$user:\1," /etc/passwd
 }
 
 passwd -d root
