@@ -30,7 +30,9 @@ while getopts :l: opt; do
 		*) err "$prg: unknown option -$OPTARG" usage ;;
 	esac
 done
-shift $((OPTIND - 1)); unset OPTIND
+# replace  ```shift $((OPTIND - 1)); unset OPTIN``` with posix compatible commands
+shift $((OPTIND - 1))
+OPTIND=0
 
 user=$(id -run)
 uid=$(id -ru)
