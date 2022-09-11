@@ -1,4 +1,5 @@
-*This a fork of https://gitlab.com/uppercat/tlbx repo. It meant to store my personal setting until they are merged by the upstream. If I make important changes I will also make a merge request to upstream.*
+*This a fork of https://gitlab.com/uppercat/tlbx repo. It was meant to store my personal setting until they are merged by the upstream but the upstream does not seems to inactive. Just to be sure to If I make important changes I will also make a merge request to upstream.*
+
 *tlbx* is a tool that facilitates creating and using mutable, persistent Linux container environments. Because it is a wrapper for https://podman.io/[podman], using it does not require root privilege.
 
 tlbx is inspired by https://github.com/containers/toolbox[containers/toolbox], but differs in that tlbx does not require a specially prepared container image. (Similarites to https://github.com/coreos/toolbox[coreos/rhcos-toolbox] are also apparent.) tlbx can work with any https://www.opencontainers.org/[OCI] image, including CentOS and Ubuntu.
