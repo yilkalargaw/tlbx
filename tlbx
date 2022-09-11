@@ -79,15 +79,15 @@ case ${1:-} in
 			--volume "$XDG_RUNTIME_DIR:$XDG_RUNTIME_DIR" \
 			$([ -n "$bindhome" ] && echo "--volume $HOME:/home/$user:rslave") \
 			--volume /run/dbus/system_bus_socket:/run/dbus/system_bus_socket \
-			--volume /etc:/run/host/etc \
-			--volume /run:/run/host/run:rslave \
-			--volume /tmp:/run/host/tmp:rslave \
-			--volume /var:/run/host/var:rslave \
-			--volume /dev:/dev:rslave \
-			--volume /mnt:/mnt:rslave \
+			$([ -d "/etc" ] && echo "--volume /etc:/run/host/etc") \
+			$([ -d "/run" ] && echo "--volume /run:/run/host/run:rslave") \
+			$([ -d "/tmp" ] && echo "--volume /tmp:/run/host/tmp:rslave") \
+			$([ -d "/var" ] && echo "--volume /var:/run/host/var:rslave") \
+			$([ -d "/dev" ] && echo "--volume /dev:/dev:rslave") \
+			$([ -d "/mnt" ] && echo "--volume /mnt:/mnt:rslave") \
 			$([ -d "/media" ] && echo "--volume /media:/media:rslave") \
-			--volume /srv:/srv:rslave \
-			$([ -d /run/media ] && echo "--volume /run/media:/run/media:rslave") \
+			$([ -d "/srv" ] && echo "--volume /srv:/srv:rslave") \
+			$([ -d "/run/media" ] && echo "--volume /run/media:/run/media:rslave") \
 			$([ -d $HOME/.fonts ] && echo "--volume $HOME/.fonts:/usr/share/fonts/first:rslave") \
 			$([ -d $HOME/.local/share/fonts ] && echo "--volume $HOME/.local/share/fonts:/usr/share/fonts/second:rslave") \
 			$([ -d /tmp/.X11-unix/ ] && echo "--volume /tmp/.X11-unix:/tmp/.X11-unix:rslave") \
