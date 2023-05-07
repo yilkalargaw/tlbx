@@ -71,6 +71,7 @@ case ${1:-} in
 			--no-hosts \
 			--pid host \
 			--privileged \
+			--mount type=devpts,destination=/dev/pts \
 			--security-opt label=disable \
 			--ulimit host \
 			--userns=keep-id \
