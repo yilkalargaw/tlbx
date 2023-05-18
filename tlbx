@@ -88,8 +88,8 @@ case ${1:-} in
 			$([ -d "/media" ] && echo "--volume /media:/media:rslave") \
 			$([ -d "/srv" ] && echo "--volume /srv:/srv:rslave") \
 			$([ -d "/run/media" ] && echo "--volume /run/media:/run/media:rslave") \
-			$([ -d $HOME/.fonts ] && echo "--volume $HOME/.fonts:/usr/share/fonts/first:rslave") \
-			$([ -d $HOME/.local/share/fonts ] && echo "--volume $HOME/.local/share/fonts:/usr/share/fonts/second:rslave") \
+			$([ -d "$HOME/.fonts" ] && echo "--volume $HOME/.fonts:/usr/share/fonts/first:rslave") \
+			$([ -d "$HOME/.local/share/fonts" ] && echo "--volume $HOME/.local/share/fonts:/usr/share/fonts/second:rslave") \
 			$([ -d /tmp/.X11-unix/ ] && echo "--volume /tmp/.X11-unix:/tmp/.X11-unix:rslave") \
 			"$img" /bin/sh "$XDG_RUNTIME_DIR/$prg-init" \
 				"$uid" "$user" "$bindhome" >/dev/null
