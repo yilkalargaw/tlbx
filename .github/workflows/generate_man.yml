@@ -1,0 +1,46 @@
+name: Generate and Commit Man Page
+
+on:
+  push:
+    paths:
+      - 'tlbx.org'
+      - '.github/workflows/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write  # needed to push commits
+
+jobs:
+  build-manpage:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install pandoc
+        run: sudo apt update && sudo apt install -y pandoc
+
+      - name: Generate man page
+        run: |
+          mkdir -p manpages
+          pandoc -s -t man tlbx.org -o manpages/tlbx.1
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Commit and push man page
+        run: |
+          git add manpages/tlbx.1
+          git diff --cached --quiet || git commit -m "Update man page from tlbx.org"
+          git push origin HEAD
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload manpage artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: tlbx-manpage
+          path: manpages/tlbx.1
