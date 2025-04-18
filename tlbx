@@ -157,12 +157,16 @@ else
 fi || {
     install -d -o "$user" -g "$user" -m 700 "/home/$user"
     if [ -d /etc/skel ]; then
-	for skel_file in /etc/skel/.*; do
-            if [ ! -f /home/$user/$(basename $skel_file) ]; then
-		su "$user" sh -c "cp -p $skel_file /home/$user"
+        # Copy files from /etc/skel to the user's home directory
+        for skel_file in /etc/skel/.*; do
+            target="/home/$user/$(basename "$skel_file")"
+            if [ ! -e "$target" ]; then
+                cp -p "$skel_file" "/home/$user/"
+                chown "$user:$user" "/home/$user/$(basename "${skel_file}")"
             fi
-	done
+        done
     fi
+
     sed -i "/^$user:/ s,:[^:]*:\([^:]*\)$,:/home/$user:\1," /etc/passwd
 }
 
@@ -205,6 +209,7 @@ INIT
 		# shellcheck disable=SC2046
 		exec podman "$ll" exec $(env | sed -r '
 			/^(HOST|HOSTNAME|HOME|PATH|SHELL|USER|_)=/ d
+            /^(GUIX_PROFILE|EMACSLOADPATH)=/ d  # Exclude Guix and EMACSLOADPATH
 			/^[_A-Za-z][_A-Za-z0-9]*=/! d
 			\|^[^=]+='"$HOME"'|! s/=.*//
 			\|^[^=]+='"$HOME"'| s|=/var|=|
