@@ -24,7 +24,7 @@ jobs:
       - name: Generate man page
         run: |
           mkdir -p manpages
-          pandoc -s -t man tlbx.org -o manpages/tlbx.1
+          pandoc -s -t man README.org -o manpages/tlbx.1
 
       - name: Configure Git
         run: |
