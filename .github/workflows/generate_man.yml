@@ -1,16 +1,20 @@
-name: Simple Readme Viewer
+name: Generate Man Page
 
 on:
   workflow_dispatch:  # Manual trigger only
 
 jobs:
-  view-readme:
+  build-manpage:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Show README.org
+      - name: Install pandoc
+        run: sudo apt-get install -y pandoc
+
+      - name: Generate and display man page
         run: |
-          cd "$GITHUB_WORKSPACE"
-          cat README.org
+          pandoc -s -t man README.org -o tlbx.1
+          echo "Generated man page content:"
+          cat tlbx.1
