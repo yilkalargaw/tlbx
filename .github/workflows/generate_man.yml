@@ -13,8 +13,17 @@ jobs:
       - name: Install pandoc
         run: sudo apt-get install -y pandoc
 
-      - name: Generate and display man page
+      - name: Generate man page
         run: |
-          pandoc -s -t man README.org -o tlbx.1
-          echo "Generated man page content:"
-          cat tlbx.1
+          mkdir -p man
+          pandoc -s -t man README.org -o man/tlbx.1
+          echo "Man page generated successfully"
+          man ./man/tlbx.1 || true  # Preview (continues if fails)
+
+      - name: Upload man page artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tlbx-manpage
+          path: man/tlbx.1
+          retention-days: 1  # Keeps artifact for 1 day (adjust as needed)
+
