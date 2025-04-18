@@ -4,11 +4,11 @@ on:
   push:
     paths:
       - 'README.org'
-      - '.github/workflows/manpage.yml'  # Reference this actual filename
+      - '.github/workflows/manpage.yml'
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: write  # Allows pushing changes
 
 jobs:
   generate-manpage:
@@ -16,7 +16,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3  # Explicit version
 
       - name: Install pandoc
         run: sudo apt-get update && sudo apt-get install -y pandoc
@@ -34,10 +34,10 @@ jobs:
           git diff --cached --quiet || git commit -m "Auto-generated: Update man page from README.org"
           git push
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Auto-generated token
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v3.1.3  # Fixed to a specific version
         with:
           name: tlbx-manpage
           path: man/tlbx.1
