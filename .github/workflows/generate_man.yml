@@ -1,29 +1,48 @@
 name: Generate Man Page
 
 on:
-  workflow_dispatch:  # Manual trigger only
+  workflow_dispatch:  # Manual trigger
+  push:
+    paths:
+      - 'README.org'  # Auto-trigger when README changes
+
+permissions:
+  contents: write  # Required for committing
 
 jobs:
-  build-manpage:
+  generate-manpage:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Needed for proper git history
 
       - name: Install pandoc
-        run: sudo apt-get install -y pandoc
+        run: sudo apt-get update && sudo apt-get install -y pandoc
 
       - name: Generate man page
         run: |
           mkdir -p man
           pandoc -s -t man README.org -o man/tlbx.1
-          echo "Man page generated successfully"
-          man ./man/tlbx.1 || true  # Preview (continues if fails)
+          echo "Man page generated at man/tlbx.1"
 
-      - name: Upload man page artifact
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: tlbx-manpage
           path: man/tlbx.1
-          retention-days: 1  # Keeps artifact for 1 day (adjust as needed)
 
+      - name: Commit and push man page
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add man/tlbx.1
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Auto-generated: Update man page from README.org"
+            git push
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
