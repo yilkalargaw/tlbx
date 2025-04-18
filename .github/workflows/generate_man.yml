@@ -3,7 +3,7 @@ name: Generate and Commit Man Page
 on:
   push:
     paths:
-      - 'tlbx.org'
+      - 'README.org'
       - '.github/workflows/**'
   workflow_dispatch:
 
@@ -44,3 +44,17 @@ jobs:
         with:
           name: tlbx-manpage
           path: manpages/tlbx.1
+
+  download-artifact:
+    runs-on: ubuntu-latest
+    needs: build-manpage
+    steps:
+      - name: Download the man page artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: tlbx-manpage
+
+      - name: Extract the downloaded artifact
+        run: |
+          mkdir -p downloaded-manpages
+          mv tlbx-manpage/tlbx.1 downloaded-manpages/tlbx.1
