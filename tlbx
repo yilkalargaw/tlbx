@@ -209,7 +209,9 @@ INIT
 		# shellcheck disable=SC2046
 		exec podman "$ll" exec $(env | sed -r '
 			/^(HOST|HOSTNAME|HOME|PATH|SHELL|USER|_)=/ d
-            /^(GUIX_PROFILE|EMACSLOADPATH)=/ d  # Exclude Guix and EMACSLOADPATH
+			/^GUIX_PROFILE=/ d  # Exclude GUIX_PROFILE
+			/^NIX_PROFILE=/ d  # Exclude GUIX_PROFILE
+			/^EMACSLOADPATH=/ d # Exclude EMACSLOADPATH
 			/^[_A-Za-z][_A-Za-z0-9]*=/! d
 			\|^[^=]+='"$HOME"'|! s/=.*//
 			\|^[^=]+='"$HOME"'| s|=/var|=|
