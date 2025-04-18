@@ -1,17 +1,17 @@
-name: Generate and Commit Man Page
+name: Generate Man Page
 
 on:
   push:
     paths:
       - 'README.org'
-      - '.github/workflows/**'
+      - '.github/workflows/manpage.yml'  # Reference this actual filename
   workflow_dispatch:
 
 permissions:
-  contents: write  # needed to push commits
+  contents: write
 
 jobs:
-  build-manpage:
+  generate-manpage:
     runs-on: ubuntu-latest
 
     steps:
@@ -19,42 +19,25 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Install pandoc
-        run: sudo apt update && sudo apt install -y pandoc
+        run: sudo apt-get update && sudo apt-get install -y pandoc
 
       - name: Generate man page
         run: |
-          mkdir -p manpages
-          pandoc -s -t man README.org -o manpages/tlbx.1
+          mkdir -p man
+          pandoc -s -t man README.org -o man/tlbx.1
 
-      - name: Configure Git
+      - name: Commit man page
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-      - name: Commit and push man page
-        run: |
-          git add manpages/tlbx.1
-          git diff --cached --quiet || git commit -m "Update man page from tlbx.org"
-          git push origin HEAD
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add man/tlbx.1
+          git diff --cached --quiet || git commit -m "Auto-generated: Update man page from README.org"
+          git push
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload manpage artifact
+      - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
           name: tlbx-manpage
-          path: manpages/tlbx.1
-
-  download-artifact:
-    runs-on: ubuntu-latest
-    needs: build-manpage
-    steps:
-      - name: Download the man page artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: tlbx-manpage
-
-      - name: Extract the downloaded artifact
-        run: |
-          mkdir -p downloaded-manpages
-          mv tlbx-manpage/tlbx.1 downloaded-manpages/tlbx.1
+          path: man/tlbx.1
