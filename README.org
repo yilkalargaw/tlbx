@@ -1,4 +1,4 @@
-#+TITLE: txlbx
+#+TITLE: tlbx
 
 * tlbx(1)
 
