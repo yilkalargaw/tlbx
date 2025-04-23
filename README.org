@@ -2,14 +2,14 @@
 
 * tlbx(1)
 
-Your Name <someone@somedomain.com>
+Yilkal Argaw <someone@somedomain.com>
 
-DRDR Manual
+tlbx Manual
 tlbx 0.1.0
 
 ** NAME
 
-drdr - a simple podman wrapper
+tlbx - a simple podman wrapper
 
 ** Why
 
