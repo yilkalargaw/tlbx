@@ -5,7 +5,7 @@
 Yilkal Argaw <someone@somedomain.com>
 
 tlbx Manual
-tlbx 0.1.0
+tlbx
 
 ** NAME
 
