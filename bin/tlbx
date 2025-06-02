@@ -212,6 +212,7 @@ INIT
             /^GUIX_PROFILE=/ d  # Exclude GUIX_PROFILE
             /^NIX_PROFILE=/ d  # Exclude GUIX_PROFILE
             /^EMACSLOADPATH=/ d # Exclude EMACSLOADPATH
+            /^TERM=/ d # Exclude TERM variable because it might not contain terminfo values like alacritty and kitty
             /^[_A-Za-z][_A-Za-z0-9]*=/! d
             \|^[^=]+='"$HOME"'|! s/=.*//
             \|^[^=]+='"$HOME"'| s|=/var|=|
